@@ -1,0 +1,61 @@
+<?php 
+$emailTo = 'amandine.dupays@gmail.com';
+$siteTitle = 'Amandine DUPAYS';
+
+error_reporting(E_ALL ^ E_NOTICE); // hide all basic notices from PHP
+
+//If the form is submitted
+if(isset($_POST['submitted'])) {
+	
+	// require a name from user
+	if(trim($_POST['contactName']) === '') {
+		$nameError =  'Vous avez oublié votre nom.';
+		$hasError = true;
+	} else {
+		$name = trim($_POST['contactName']);
+	}
+	
+	// need valid email
+	if(trim($_POST['email']) === '')  {
+		$emailError = 'Vous avez oublié votre e-mail.';
+		$hasError = true;
+	} else if (!preg_match("/^[[:alnum:]][a-z0-9_.-]*@[a-z0-9.-]+\.[a-z]{2,4}$/i", trim($_POST['email']))) {
+		$emailError = 'Adresse email non valide.';
+		$hasError = true;
+	} else {
+		$email = trim($_POST['email']);
+	}
+		
+	// we need at least some content
+	if(trim($_POST['comments']) === '') {
+		$commentError = 'Vous avez oublié votre message.';
+		$hasError = true;
+	} else {
+		if(function_exists('stripslashes')) {
+			$comments = stripslashes(trim($_POST['comments']));
+		} else {
+			$comments = trim($_POST['comments']);
+		}
+	}
+		
+	// upon no failure errors let's email now!
+	if(!isset($hasError)) {
+		
+		$subject = 'New message to '.$siteTitle.' from '.$name;
+		$sendCopy = trim($_POST['sendCopy']);
+		$body = "Name: $name \n\nEmail: $email \n\nMessage: $comments";
+		$headers = 'From: ' .' <'.$email.'>' . "\r\n" . 'Reply-To: ' . $email;
+
+		@mail($emailTo, $subject, $body, $headers);
+		
+        //Autoresponse
+		$respondSubject = 'Merci d\'avoir contacté '.$siteTitle;
+		$respondBody = "Votre message à $siteTitle a bien été envoyé. \n\nNous répondrons dès que possible.";
+		$respondHeaders = 'De: ' .' <'.$emailTo.'>' . "\r\n" . 'Reply-To: ' . $emailTo;
+		
+		@mail($email, $respondSubject, $respondBody, $respondHeaders);
+		
+        // set our boolean completion value to TRUE
+		$emailSent = true;
+	}
+}
